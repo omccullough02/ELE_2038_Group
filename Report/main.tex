@@ -1,0 +1,442 @@
+\documentclass[a4paper,10pt,reqno]{amsart}
+
+\usepackage[utf8]{inputenc}
+\usepackage[foot]{amsaddr}
+\usepackage{amsmath,amsfonts,amssymb,amsthm,mathrsfs,bm}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{color}
+\usepackage[dvipsnames]{xcolor}
+
+\input{toc-config.tex}
+
+\usepackage{mathtools,enumerate,mathrsfs,graphicx}
+\usepackage{epstopdf}
+\usepackage{hyperref}
+
+\usepackage{latexsym}
+
+
+\definecolor{CommentGreen}{rgb}{0.0,0.4,0.0}
+\definecolor{Background}{rgb}{0.9,1.0,0.85}
+\definecolor{lrow}{rgb}{0.914,0.918,0.922}
+\definecolor{drow}{rgb}{0.725,0.745,0.769}
+
+\usepackage{listings}
+\usepackage{textcomp}
+\lstloadlanguages{Matlab}%
+\lstset{
+    language=Matlab,
+    upquote=true, frame=single,
+    basicstyle=\small\ttfamily,
+    backgroundcolor=\color{Background},
+    keywordstyle=[1]\color{blue}\bfseries,
+    keywordstyle=[2]\color{purple},
+    keywordstyle=[3]\color{black}\bfseries,
+    identifierstyle=,
+    commentstyle=\usefont{T1}{pcr}{m}{sl}\color{CommentGreen}\small,
+    stringstyle=\color{purple},
+    showstringspaces=false, tabsize=5,
+    morekeywords={properties,methods,classdef},
+    morekeywords=[2]{handle},
+    morecomment=[l][\color{blue}]{...},
+    numbers=none, firstnumber=1,
+    numberstyle=\tiny\color{blue},
+    stepnumber=1, xleftmargin=10pt, xrightmargin=10pt
+}
+
+\numberwithin{equation}{section}
+\synctex=1
+
+\hypersetup{
+    unicode=false, pdftoolbar=true, 
+    pdfmenubar=true, pdffitwindow=false, pdfstartview={FitH}, 
+    pdftitle={ELE2024 Coursework}, pdfauthor={A. Author},
+    pdfsubject={ELE2024 coursework}, pdfcreator={A. Author},
+    pdfproducer={ELE2024}, pdfnewwindow=true,
+    colorlinks=true, linkcolor=red,
+    citecolor=blue, filecolor=magenta, urlcolor=cyan
+}
+
+% CUSTOM COMMANDS
+\renewcommand{\Re}{\mathbf{re}}
+\renewcommand{\Im}{\mathbf{im}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\lap}{\mathscr{L}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\smallmat}[1]{\left[ \begin{smallmatrix}#1 \end{smallmatrix} \right]}
+
+%opening
+\title[ELE2038 Coursework]{ELE2038: Group Coursework Report}
+
+\author[O. McCullough]{Owen McCullough}
+\author[O. Quail]{Orla Quail}
+\author[E. Acton]{Eoin Acton}
+
+\begin{document}
+
+\maketitle
+
+\section*{Introduction}
+In this report we aim to develop a controller for a wooden ball on an incline plane. The system can be seen below:
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\linewidth]{x_forced_response.eps}
+\caption{Ball on an Incline Plane}
+\label{fig:system}
+\end{figure}
+
+\section{Derivation of System Equations}
+
+\subsection{Modelling}
+From \hyperref[fig:system]{Figure 1}, the force $F$ acting on the ball can be written as:
+\begin{equation}
+\label{sec:eq11}
+    F_{total}=F_{magnet}+F-F_{spring}-F_{dampener}
+\end{equation}
+The force of gravity acting on the ball can be written as:
+\begin{equation*}
+    F=mg
+\end{equation*}
+where $m$ is the mass of the ball, and $g$ is the gravitational constant. Due to the inline plane, we have to split this force into horizontal and vertical components:
+\begin{equation*}
+    F=mg\cos{\phi}+mg\sin{\phi}
+\end{equation*}
+We can see in \hyperref[fig:system]{Figure 1} that $mg\cos{\phi}$ will be equal to 0 as it cannot move vertically downwards, therefore:
+\begin{equation*}
+    F=mg\sin{\phi}
+\end{equation*}
+Combining $F$ with the secondary force $T$, we can begin solving for an equation of motion:
+\begin{equation}
+\label{sec:eq12}
+    mg\sin{\phi}-T=ma=m\ddot x
+\end{equation}
+The equation for the force $T$, can be written as:
+\begin{equation*}
+    T=\frac{M}{r}
+\end{equation*}
+Since the torque $M$ is defined as the moment of inertia $I$ multiplied by the angular acceleration $\ddot \theta$, we can write:
+\begin{equation}
+\label{sec:eq13}
+    T=\frac{I\ddot \theta}{r}
+\end{equation}
+Combining the above equation for $T$ (\ref{sec:eq13}) with (\ref{sec:eq12}), we get:
+\begin{gather*}
+    \notag mg\sin{\phi}-\frac{I\ddot \theta}{r}=ma=m\ddot x, \\
+    \notag mg\sin{\phi}=(\frac{I}{R}+mR)\ddot \theta, \\
+\end{gather*}  
+Substituting the equation for moment of inertial for a sphere, we get:
+\begin{align*}
+    \notag mg\sin{\phi}&=(\frac{2}{5}+1)mR\ddot \theta, \\
+    \notag mg\sin{\phi}&=\frac{7}{5}m\ddot x, \\
+\end{align*}
+Therefore:
+\begin{equation}
+\label{sec:eq14}
+        F=g\sin{\phi}-\frac{7}{5}\ddot x
+\end{equation}
+For the spring and dampener forces, they can be modelled as the following equations:
+\begin{subequations}
+\label{sec:eq15}
+\begin{align}
+    F_{spring}&=k(x-d), \\
+    F_{dampener}&=b\dot x
+\end{align}
+\end{subequations}
+Finally, in the problem statement we were given, $F_{magnet}$ was defined as:
+\begin{equation}
+\label{sec:eq16}
+    F_{magnet}=c^2\frac{i^2}{y^2}
+\end{equation}
+where $y=(\delta-x)$. 
+\subsection{Obtaining State Space Representation} Combining our force equations (\ref{sec:eq14}, \ref{sec:eq15} and \ref{sec:eq16}) we get:
+\begin{equation}
+\label{sec:eq17}
+    \frac{7}{5}m\ddot x=c\frac{i^2}{(\delta-x)^2}+mg\sin{\phi}-k(x-d)-b\dot x
+\end{equation}
+To obtain SSR, we create 3 new variables:
+\begin{align*}
+x_1&=x, \\
+x_2&=\dot x, \\
+x_3&=i
+\end{align*}
+Substituting these into (\ref{sec:eq17}) gives us the following SSR:
+\begin{equation}
+\label{sec:eq18}
+    \bold{\dot x} = f(\bold x, V) = \begin{bmatrix} 
+        \dot x_1 \\ 
+        \dot x_2 \\ 
+        \dot x_3 
+    \end{bmatrix} = \begin{bmatrix}
+        x_2 \\
+        \frac{5}{7m}(c\frac{{x_3}^2}{(\delta-x_1)^2}+mg\sin{\phi}-k(x_1-d)-bx_2) \\
+        \frac{V-x_3R}{L_0+L_1\exp{-\alpha(-\delta-x_1)}}
+    \end{bmatrix}
+\end{equation}
+
+\section{Linearisation of System Equations}
+The definitions for the dynamical system derived in (\ref{sec:eq18}) can be written as:
+\begin{align}
+\notag \dot x_1 &= x_2,                  \\
+\notag \dot x_2 &= \theta(x_1, x_2, x_3),  \\
+\notag \dot x_3 &= \psi(V, x_1, x_3)
+\end{align}
+Where the functions $\theta(x_1, x_2, x_3)$ and $\psi(V, x_1, x_3)$ represent the acceleration of the ball and the rate of change of the current in the electromagnet respectively.
+To obtain a linear approximation for $\theta(x_1, x_2, x_3)$ and $\psi(V, x_1, x_3)$ around the equilibrium points $(x_1^e, x_2^e, x_3^e, V^e)$, we derived the following partial derivatives for both functions:
+\begin{subequations}
+\label{sec:eq21}
+\begin{align}
+    A = \frac{\partial \theta(x_1,x_2,x_3)}{\partial x_1}\bigg|_{x_1^e, x_2^e, x_3^e} &= \frac{5 \cdot \left(\frac{2 c {x_{3}^e}^{2}}{\left(\delta - x_{1}^e\right)^{3}} - k\right)}{7 m}, \\
+    B = \frac{\partial \theta(x_1,x_2,x_3)}{\partial x_2}\bigg|_{x_1^e, x_2^e, x_3^e} &= - \frac{5 b}{7 m}, \\
+    C = \frac{\partial \theta(x_1,x_2,x_3)}{\partial x_3}\bigg|_{x_1^e, x_2^e, x_3^e} &= \frac{10 c x_3^e}{7 m \left(\delta - x_1^e\right)^{2}}
+\end{align}
+and
+\begin{align}
+    D = \frac{\partial \psi(V,x_1,x_3)}{\partial x_1}\bigg|_{V^e, x_1^e, x_3^e} &= 0, \\
+    E = \frac{\partial \psi(V,x_1,x_3)}{\partial x_3}\bigg|_{V^e, x_1^e, x_3^e} &=- \frac{R}{L_{0} + L_{1} e^{- \alpha \left(\delta - x_{1}^e\right)}}, \\
+    F = \frac{\partial \psi(V,x_1,x_3)}{\partial V}\bigg|_{V^e, x_1^e, x_3^e} &=\frac{1}{L_{0} + L_{1} e^{- \alpha \left(\delta - x_{1}^e\right)}}
+\end{align}
+\end{subequations}
+Taylor's theorem then gives us the following approximations for $\theta(x_1, x_2, x_3)$:
+\begin{equation}
+\label{sec:eq22}
+    \theta \approx \theta^{e} + A(x_1-x_1^e) + B(x_2-x_2^e) + C(x_3-x_3^e)
+\end{equation}
+and for $\psi(V, x_1, x_3)$:
+\begin{equation}
+\label{sec:eq23}
+    \psi \approx \psi^{e} + D(x_1-x_1^e) + E(x_3-x_3^e) + F(V-V^e)
+\end{equation}
+We then introduced deviation variables, which are defined as $\bar x=(x-x^e)$, and rewrote equations (\ref{sec:eq22}) and (\ref{sec:eq23}) substituting in deviation variables for $x_1$, $x_2$, $x_3$ and $V$:
+\begin{align}
+\label{sec:eq24}
+    \theta &\approx \theta^e + A\bar x_1 + B\bar x_2 + C\bar x_3, \\
+    \psi &\approx \psi^e + D\bar x_1 + E\bar x_3 + F\bar V
+\end{align}
+This allows us to rewrite the SSR (\ref{sec:eq18}) we obtained in the previous section in the following linear form:
+\begin{equation}
+\label{sec:eq24}
+    \bold{\dot \bar{x}} = f(\bold x, V) = \begin{bmatrix} 
+        \dot x_1 \\ 
+        \dot x_2 \\ 
+        \dot x_3 
+    \end{bmatrix} \approx \begin{bmatrix}
+        x_2 \\
+        A\bar x_1 + B\bar x_2 + C\bar x_3 \\
+        D\bar x_1 + E\bar x_3 + F\bar V
+    \end{bmatrix}
+\end{equation}
+$\theta^e$ and $\phi^e$ have been omitted as they are equal to 0 at their equilibrium points.
+\subsection{Determining Equilibrium Points} To determine equilibrium points, we can set $f(\bold x, V)=0$:
+\begin{equation}
+\label{sec:eq25}
+    f(\bold{x^e}, V^e) = \begin{bmatrix} 
+        \dot x_1^e \\ 
+        \dot x_2^e \\ 
+        \dot x_3^e 
+    \end{bmatrix} = \begin{bmatrix}
+        x_2 \\
+        \frac{5}{7m}(c\frac{{x_3^e}^2}{(\delta-x_1^e)^2}+mg\sin{\phi}-k(x_1^e-d)-bx_2^e) \\
+        \frac{V-x_3^eR}{L_0+L_1\exp{-\alpha(-\delta-x_1^e)}}
+    \end{bmatrix} = \begin{bmatrix}
+        0 \\
+        0 \\
+        0
+    \end{bmatrix}
+\end{equation}
+This then defines a set of state variables $\bold{x^e}$ and an input voltage $V^e$ that satisfies equation (\ref{sec:eq25}). In the problem statement, we were told that the aim of the controller is to maintain a position of 0.5m for the ball, we can take this value and use it as our equilibrium point for $x_1$, hence $x_1^e=0.5m$. This leaves us with 3 equations and 3 unknowns, which we solved using the Python module sympy to give us the following values for $\bold{x^e}$ and $V^e$:
+\begin{equation}
+    \bold{x^e} = \begin{bmatrix}
+        x_1^e \\
+        x_2^e \\
+        x_3^e
+    \end{bmatrix} = \begin{bmatrix}
+        0.5m \\
+        0ms^-1 \\
+        0.707A
+    \end{bmatrix}
+\end{equation}
+\begin{align}
+    V^e = 1556.47V
+\end{align}
+\section{Controller Design}
+\subsection{Defining Transfer Functions} We first applied the Laplace transform to the linear approximation of the system we derived in (\ref{sec:eq24}):
+\begin{align*}
+    \lap\{\dot x_1\} &= sX_1 = X_2 \\
+    \lap\{\dot x_2\} &= sX_2 = A\bar X_1+B\bar X_2+C\bar X_3 \\
+    \lap\{\dot x_3\} &= sX_3 = D\bar X_1+E\bar X_2+F\bar V \\
+\end{align*}
+\section{Stability Analysis}
+
+\section{Old Stuff}
+\begin{lstlisting}[language=python]
+# Definitions for symbols used in G_theta
+c, d, t = sym.symbols('c, d, t', positive=True, real=True)
+s = sym.symbols('s')
+
+G = -c/(s**2 - d)
+
+# Impulse response
+U = 1
+X = G * U
+x_imp = sym.inverse_laplace_transform(X, s, t)
+\end{lstlisting}
+To obtain an expression for the impulse response of $G_\theta(s)$, we set $U=1$, giving us the following equation:
+\begin{equation}
+    - \frac{c \sinh{\left(\sqrt{d} t \right)}}{\sqrt{d}}
+\end{equation}
+\begin{lstlisting}[language=python]
+# Step response of G_theta
+U = 1 / s
+X = G * U
+x_step = sym.inverse_laplace_transform(X, s, t)
+\end{lstlisting}
+Repeating the same process using the inverse Laplace transform of $G_\theta(s)$ but with $U=\frac{1}{s}$, we get the following equation describing step response:
+\begin{equation}
+    - \frac{2 c \sinh^{2}{\left(\frac{\sqrt{d} t}{2} \right)}}{d}
+\end{equation}
+\begin{lstlisting}[language=python]
+omega = sym.symbols('omega', real=True)
+# Frequency response input, Laplace transform of u(t)=sin(omega*t)
+U = omega/(s**2 + omega**2)
+X = G * U
+x_freq = sym.inverse_laplace_transform(X, s, t)
+\end{lstlisting}
+Finally, an expression for frequency response can be obtained by setting the input $U=\lap \{ \sin(\omega t) \}$:
+\begin{equation}
+    \frac{c \left(2 d^{\frac{3}{2}} e^{\sqrt{d} t} \sin{\left(\omega t \right)} + 2 \sqrt{d} \omega^{2} e^{\sqrt{d} t} \sin{\left(\omega t \right)} - d \omega e^{2 \sqrt{d} t} + d \omega - \omega^{3} e^{2 \sqrt{d} t} + \omega^{3}\right) e^{- \sqrt{d} t}}{2 \sqrt{d} \left(i \sqrt{d} - \omega\right)^{2} \left(i \sqrt{d} + \omega\right)^{2}}
+\end{equation}
+This process was then repeated for the transfer function $G_x(s)$:
+\begin{lstlisting}[language=python]
+# Definitions for symbols used in G_x
+a, b, t = sym.symbols('a, b, t', positive=True, real=True)
+s = sym.symbols('s')
+
+G = a/(s**2) + (b*c)/(s**4 - d*s**2)
+
+# Impulse response
+U = 1
+X = G * U
+x_imp = sym.inverse_laplace_transform(X, s, t)
+\end{lstlisting}
+Again, by setting the input $U=1$, we obtain an expression for step response of $G_x(s)$:
+\begin{equation}
+    a t - \frac{b c t}{d} + \frac{b c \sinh{\left(\sqrt{d} t \right)}}{d^{\frac{3}{2}}}
+\end{equation}
+\begin{lstlisting}[language=python]
+# Step response of G_x
+U = 1 / s
+X = G * U
+x_step = sym.inverse_laplace_transform(X, s, t)
+\end{lstlisting}
+Setting the input $U=\frac{1}{s}$, we obtain an expression for step response of $G_x(s)$:
+\begin{equation}
+    \frac{b c \left(\cosh{\left(\sqrt{d} t \right)} - 1\right) + \frac{d t^{2} \left(a d - b c\right)}{2}}{d^{2}}
+\end{equation}
+\begin{lstlisting}[language=python]
+omega = sym.symbols('omega', real=True)
+# Frequency response input, Laplace transform of u(t)=sin(omega*t)
+U = omega/(s**2 + omega**2)
+X = G * U
+x_freq = sym.inverse_laplace_transform(X, s, t)
+\end{lstlisting}
+Setting the input $U=\lap \{ \sin(\omega t) \}$, we obtain the following expression for the frequency response of $G_x(s)$:
+\begin{equation}
+    \frac{b c d \omega^{3} \sinh{\left(\sqrt{d} t \right)} - d^{\frac{5}{2}} \left(a d + a \omega^{2} - b c\right) \sin{\left(\omega t \right)} + d^{\frac{3}{2}} \omega t \left(d + \omega^{2}\right) \left(a d - b c\right)}{d^{\frac{5}{2}} \omega^{2} \left(d + \omega^{2}\right)}
+\end{equation}
+
+\section{Question Q4}
+To simulate the response of both $\theta(t)$ and $x(t)$, we used Python's control systems module. Compared to sympy, the expressions used are not symbolic. The following set of parameters were given to us:
+\begin{subequations}
+\label{sec:q41}
+\begin{align}
+    M =&\space0.3kg, \\
+    m =&\space0.1kg, \\
+    l =&\space35cm,  \\
+    g =&\space9.81\tfrac{m}{s^2}
+\end{align}    
+\end{subequations}
+\begin{lstlisting}[language=python]
+# Numerical values for all constant parameters
+M = 0.3
+m = 0.1
+l = 0.35
+g = 9.81
+
+# Numerical definitions for a, b, c, d
+a = (4) / (4 * M + m)
+b = (3 * m * g) / (4 * M + m)
+c = (3) / (l * (4 * M + m))
+d = (3 * (M + m) * g)/(l * (4 * M + m))
+s = ctrl.TransferFunction.s
+
+# G_theta transfer function
+G = -c/(s**2 - d)
+\end{lstlisting}
+Using (\ref{sec:q41}), we first defined a numeric expression for $G_\theta(s)$ and simulated the response to the input force $F(t)=\sin(100t^2)$ over $t\in[0, 0.2]s$.
+\begin{lstlisting}[language=python]
+# G_theta transfer function
+G = -c/(s**2 - d)
+
+# Simulate over t @ [0, 0.2]s
+ts = np.linspace(0, 0.2, 200)
+u = np.sin(100*ts**2)
+
+resp = ctrl.forced_response(G, ts, u)
+\end{lstlisting}
+The response of $G_\theta(s)$ was plotted and can be found below:
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\linewidth]{theta_forced_response.eps}
+\caption{$G_\theta(s)$ Response to $F(t)=\sin(100t^2)$ over $t\in[0, 0.2]s$.}
+\end{figure}
+We then defined a numeric expression for $G_x(s)$ and simulated the response for the input force $F(t)=\sin(100t^2)$ over $t\in[0, 0.2]s$.
+\begin{lstlisting}[language=python]
+# G_x transfer function
+G = a/(s**2) + (b*c)/(s**4 - d*s**2)
+
+# Simulate over t @ [0, 0.2]s
+ts = np.linspace(0, 0.2, 200)
+u = np.sin(100*ts**2)
+
+resp = ctrl.forced_response(G, ts, u)
+\end{lstlisting}
+The response of $G_x(s)$ was plotted and can be found below:
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\linewidth]{x_forced_response.eps}
+\caption{$G_x(s)$ Response to $F(t)=\sin(100t^2)$ over $t\in[0, 0.2]s$.}
+\end{figure}
+
+\section{Question Q5}
+The PID controller we designed in the lab was designed to maintain an angle $\theta$ between $[-5, 5]\deg$ and return $\theta$ to below $0.1\deg$ after $0.4s$.
+\begin{lstlisting}[language=python]
+# G_theta transfer function
+G = -c/(s**2 - d)
+
+# PID controller
+Kp = -140
+Ki = -1000
+Kd = -10
+Gc = Kp + Ki/s + Kd*s
+
+Gload = ctrl.feedback(G, Gc)
+\end{lstlisting}
+Using the numerical expressions defined previously, a PID controller was designed with the following parameters:
+\begin{subequations}
+\label{sec:q51}
+\begin{align}
+    K_p =& -140, \\
+    K_i =& -1000, \\
+    K_d =& -10
+\end{align}    
+\end{subequations}
+All of the PID parameters are negative as the system must counteract any changes to the input force $F(t)$. The impulse response of this PID controller applied to the transfer function $G_\theta(s)$ are shown below:
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\linewidth]{pid_impulse_response.eps}
+\caption{Impulse Response of PID Controller (\ref{sec:q51}) Applied to $G_\theta(s)$.}
+\end{figure}
+
+\end{document}
