@@ -216,7 +216,7 @@ We then introduced deviation variables, which are defined as $\bar x=(x-x^e)$, a
 \end{align}
 This allows us to rewrite the SSR (\ref{sec:eq18}) we obtained in the previous section in the following linear form:
 \begin{equation}
-\label{sec:eq24}
+\label{sec:eq26}
     \bold{\dot \bar{x}} = f(\bold x, V) = \begin{bmatrix} 
         \dot x_1 \\ 
         \dot x_2 \\ 
@@ -230,7 +230,7 @@ This allows us to rewrite the SSR (\ref{sec:eq18}) we obtained in the previous s
 $\theta^e$ and $\phi^e$ have been omitted as they are equal to 0 at their equilibrium points.
 \subsection{Determining Equilibrium Points} To determine equilibrium points, we can set $f(\bold x, V)=0$:
 \begin{equation}
-\label{sec:eq25}
+\label{sec:eq27}
     f(\bold{x^e}, V^e) = \begin{bmatrix} 
         \dot x_1^e \\ 
         \dot x_2^e \\ 
@@ -245,7 +245,7 @@ $\theta^e$ and $\phi^e$ have been omitted as they are equal to 0 at their equili
         0
     \end{bmatrix}
 \end{equation}
-This then defines a set of state variables $\bold{x^e}$ and an input voltage $V^e$ that satisfies equation (\ref{sec:eq25}). In the problem statement, we were told that the aim of the controller is to maintain a position of 0.5m for the ball, we can take this value and use it as our equilibrium point for $x_1$, hence $x_1^e=0.5m$. This leaves us with 3 equations and 3 unknowns, which we solved using the Python module sympy to give us the following values for $\bold{x^e}$ and $V^e$:
+This then defines a set of state variables $\bold{x^e}$ and an input voltage $V^e$ that satisfies equation (\ref{sec:eq27}). In the problem statement, we were told that the aim of the controller is to maintain a position of 0.5m for the ball, we can take this value and use it as our equilibrium point for $x_1$, hence $x_1^e=0.5m$. This leaves us with 3 equations and 3 unknowns, which we solved using the Python module sympy to give us the following values for $\bold{x^e}$ and $V^e$:
 \begin{equation}
     \bold{x^e} = \begin{bmatrix}
         x_1^e \\
@@ -261,12 +261,64 @@ This then defines a set of state variables $\bold{x^e}$ and an input voltage $V^
     V^e = 1556.47V
 \end{align}
 \section{Controller Design}
-\subsection{Defining Transfer Functions} We first applied the Laplace transform to the linear approximation of the system we derived in (\ref{sec:eq24}):
+\subsection{Defining a Transfer Function} We first applied the Laplace transform to the linear approximation of the system we derived in (\ref{sec:eq26}):
 \begin{align*}
-    \lap\{\dot x_1\} &= sX_1 = X_2 \\
-    \lap\{\dot x_2\} &= sX_2 = A\bar X_1+B\bar X_2+C\bar X_3 \\
-    \lap\{\dot x_3\} &= sX_3 = D\bar X_1+E\bar X_2+F\bar V \\
+    \lap\{\dot x_1(t)\} &= s\bar X_1(s) = X_2(s) \\
+    \lap\{\dot x_2(t)\} &= s\bar X_2(s) = A\bar X_1(s)+B\bar X_2(s)+C\bar X_3(s) \\
+    \lap\{\dot x_3(t)\} &= s\bar X_3(s) = D\bar X_1(s)+E\bar X_2(s)+F\bar V(s) \\
 \end{align*}
-\section{Stability Analysis}
+The transfer function should relate the input voltage $\bar V$, to the position of the ball $\bar x_1$, therefore:
+\begin{equation}
+    G_x(s)=\frac{\bar X_1(s)}{\bar V(s)}
+\end{equation}
+The derivation for the transfer function can be seen below:
+\begin{align}
+\label{sec:eq32}
+    \notag s\bar X_3(s) &= E\bar X_3(s)+F\bar V(s) \\
+    \notag F\bar V(s) &= s\bar X_3(s)-E\bar X_3(s) \\
+    \notag F\bar V(s) &= (s-E)\bar X_3(s) \\
+    \bar X_3(s)&=\frac{F\bar V(s)}{s-E}
+\end{align}
+\begin{align}
+\label{sec:eq33}
+    \notag s\bar X_2(s) &= A\bar X_1(s)+B\bar X_2(s)+C\bar X_3(s) \\
+    \notag s(s\bar X_1(s)) &= A\bar X_1(s)+B(s\bar X_1(s))+C\bar X_3(s) \\
+    \notag s^2\bar X_1(s) &= A\bar X_1(s)+sB\bar X_1(s)+C\bar X_3(s) \\
+    \notag C\bar X_3(s) &= s^2\bar X_1(s)-A\bar X_1(s)-sB\bar X_1(s) \\
+    C\bar X_3(s) &= \bar X_1(s)(s^2-A-sB)
+\end{align}
+Substituting equation (\ref{sec:eq32}) into equation (\ref{sec:eq33}) gives:
+\begin{align}
+    \notag C(\frac{F\bar V(s)}{s-E}) &= \bar X_1(s)(s^2-A-sB) \\
+    \notag \bar V(s)(\frac{CF}{s-E}) &= \bar X_1(s)(s^2-A-sB) \\
+    \notag \frac{\bar X_1(s)}{\bar V(s)} &= \frac{\frac{CF}{s-E}}{s^2-A-sB} \\
+    \frac{\bar X_1(s)}{\bar V(s)} &= \frac{CF}{s^3-s^2(B+E)-s(A-BE)+AE}
+\end{align}
+This transfer function is not BIBO stable (elaborate on this). \hyperref[fig:no_pid_imp]{Figure 2} and \hyperref[fig:no_pid_step]{Figure 3} shows the response of this transfer function to an impulse and step response respectively.
+\subsection{Sensor Design}In the problem statement, we were told that the position of the ball would be measured with a sensor which could be modelled as a first-order system, the derivation of the transfer function for the sensor can be seen below: 
+\begin{equation}
+\label{sec:eq35}
+    x(t)+\tau_m\dot x(t)=K_mu(t)
+\end{equation}
+To get a transfer function for the sensor, we first apply the Laplace transform to (\ref{sec:eq35}):
+\begin{align*}
+    X(s)+\tau_msX(s)=K_mU(s) \\
+    X(s)(1+\tau_ms)=K_mU(s)
+\end{align*}
+The transfer function for the sensor $G_s(s)$ can then be defined as:
+\begin{align}
+    \frac{X(s)}{U(s)}=\frac{K_m}{1+\tau_ms}
+\end{align}
+In the problem statement, we were told that the time constant $\tau_m$ is equal to 30ms. The value of the static gain $K_m$ was chosen to be $1$, this was done to ensure that the output of the sensor accurately reflects the position of the ball. \\ \\
+The sensor acts as a 30ms delay between the output of the system and the PID controller to emulate the effects a sensor would have on a practical system with the same design. \hyperref[fig:sensorcomparison]{Figure 4} shows the response of the PID controlled system with and without the sensor in place to display the effect on the system's response to a unit impulse.
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\linewidth]{pid-sensor-comparison.eps}
+\caption{Response of PID controlled system with and without the sensor.}
+\label{fig:sensorcomparison}
+\end{figure}
+\subsection{Designing a PID controller} In order to design an appropriate PID controller for this system, we defined the following constraints our controller should meet. (DEFINE THESE).
+\section{Disturbance Rejection}
+\section{Stability Analysis} 
 
 \end{document}
